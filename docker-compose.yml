@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  app:
+    image: php:8.1-apache
+    container_name: GeStockapp_app
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+      - ./config.conf:/etc/apache2/sites-available/config.conf
+    ports:
+      - "8000:80"
+    networks:
+      - GeStockapp_network
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+    depends_on:
+      - db
+    command: /bin/bash -c "docker-php-ext-install pdo pdo_mysql && a2enmod rewrite && apache2-foreground"
+
+  db:
+    image: mysql:8.0
+    container_name: GeStockapp_db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_DATABASE}
+      # Optionally set a regular MySQL user
+      # MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "3307:3306"
+    volumes:
+      - GeStockapp_data:/var/lib/mysql
+    networks:
+      - GeStockapp_network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: GeStockapp_pma
+    environment:
+      PMA_HOST: db
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "8080:80"
+    depends_on:
+      - db
+    networks:
+      - GeStockapp_network
+
+networks:
+  GeStockapp_network:
+    name: GeStockapp_network
+
+volumes:
+  GeStockapp_data:
